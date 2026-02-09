@@ -44,15 +44,10 @@
 #include "BMSUtil.h"
 #include "MAXbms.h"
 #include "isa_shunt.h"
+#include "bmw_sbox.h"
 #define PRINT_JSON 0
 
-#define FLASH_DELAY 8000000
-static void delay(void) //delay used for isa setup fumction. probably much better ways but its used only once.......
-{
-   int i;
-   for (i = 0; i < FLASH_DELAY; i++)       /* Wait a bit. */
-      __asm__("nop");
-}
+
 			   
 extern "C" void __cxa_pure_virtual()
 {
@@ -67,94 +62,53 @@ static uint8_t BMStype;
 int uauxGain = 222;	
 uint8_t Gcount = 0x00;
 float SOCVal = 0;
-int32_t Amperes;
-int32_t Ah;
-int32_t KW;
-int32_t KWh;
-int32_t Voltage1 = 0;
-int32_t Voltage2 = 0;
-int32_t Voltage3 = 0;
-int32_t Temperature;
-bool firstframe = true;
 
 //sample 10 ms task
 static void Ms10Task(void)
 {
     //Set timestamp of error message
     ErrorMessage::SetTime(rtc_get_counter_val());
-	ProcessUdc();
-}
-
-void ProcessUdc()
-{
-    if (Param::GetInt(Param::ShuntType) == 1)//ISA shunt
-    {
-        float udc1 = ((float)Voltage1)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc1, udc1);
-        float udc2 = ((float)Voltage2)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc2, udc2);
-        float udc3 = ((float)Voltage3)/1000;//get voltage from isa sensor and post to parameter database
-        Param::SetFloat(Param::udc3, udc3);
-        float idc = ((float)Amperes)/1000;//get current from isa sensor and post to parameter database
-        Param::SetFloat(Param::idc, idc);
-        float kw = ((float)KW)/1000;//get power from isa sensor and post to parameter database
-        Param::SetFloat(Param::power, kw);
-        float kwh = ((float)KWh)/1000;//get kwh from isa sensor and post to parameter database
-        Param::SetFloat(Param::KWh, kwh);
-        float Amph = ((float)Ah)/3600;//get Ah from isa sensor and post to parameter database
-        Param::SetFloat(Param::AMPh, Amph);
-	}
-}
-
-void CalcSOC()
-{
-    float Capacity_Parm = Param::GetFloat(Param::BattCap);
-    float kwh_Used = ABS(Param::GetFloat(Param::KWh));
-
-    SOCVal = 100.0f - 100.0f * kwh_Used / Capacity_Parm;
-
-    if(SOCVal > 100) SOCVal = 100;
-    Param::SetFloat(Param::SOC,SOCVal);
+	//ProcessUdc();
 }
 
 	
 //sample 100ms task
 static void Ms100Task(void)
 {
-    DigIo::led_out.Toggle();
+    DigIo::LED_ACT.Toggle();
     iwdg_reset();
-	Param::SetInt(Param::IN1, DigIo::in1.Get());
-	Param::SetInt(Param::IN2, DigIo::in2.Get());
-	if(DigIo::in1.Get() || (Param::GetInt(Param::opmode) == 1)) 
+	Param::SetInt(Param::IN1, DigIo::DIN1.Get());
+	Param::SetInt(Param::IN2, DigIo::DIN2.Get());
+	if(DigIo::DIN1.Get() || (Param::GetInt(Param::opmode) == 1)) 
 	{
-		DigIo::out1.Set(); 
+		DigIo::PUMP.Set(); 
 		Param::SetInt(Param::CoolantPUMP, 1);
 	}
 	else 
 	{
-		DigIo::out1.Clear();
+		DigIo::PUMP.Clear();
 		Param::SetInt(Param::CoolantPUMP, 0);
 	}
-	if((Param::GetInt(Param::opmode) == 1) && (DigIo::in2.Get() || (Param::GetInt(Param::TempMax) >= 35))) 
+	if((Param::GetInt(Param::opmode) == 1) && (DigIo::DIN2.Get() || (Param::GetInt(Param::TempMax) >= 35))) 
 	{
-		DigIo::out2.Set();
+		DigIo::FAN.Set();
 		Param::SetInt(Param::CoolantFAN, 1);
 	}
 	else 
 	{
-		DigIo::out2.Clear();
+		DigIo::FAN.Clear();
 		Param::SetInt(Param::CoolantFAN, 0);
 	}
-	Param::SetFloat(Param::uaux, ((float)AnaIn::lvmon.Get()) / uauxGain);
+	Param::SetFloat(Param::uaux, ((float)AnaIn::Vsense.Get()) / uauxGain);
     float cpuLoad = scheduler->GetCpuLoad();
     Param::SetFloat(Param::cpuload, cpuLoad / 10);
-    Param::SetInt(Param::tmpaux,((float)Temperature));
 	/*
 	if(Param::GetInt(Param::ShuntType) != 0)//Do not do any SOC calcs
     {
         CalcSOC();
     }
 	*/
+	
 //!!! to change to BMS class with selectable types under it to clean up code and simplify interactions//
     if(BMStype == BMS_M3)
     {
@@ -172,148 +126,12 @@ static void Ms100Task(void)
 	timer_set_prescaler(TIM3,Param::GetInt(Param::Tim_Presc));
     timer_set_oc_value(TIM3, TIM_OC3, Param::GetInt(Param::Tim_1_OC));
     timer_set_oc_value(TIM3, TIM_OC4, Param::GetInt(Param::Tim_2_OC));
+	int32_t IsaTemp=ISA::Temperature;
+    Param::SetInt(Param::tmpaux,IsaTemp);
 }
 
 static void Ms200Task(void)
 {
-}
-
-void initialize()
-{
-   uint8_t bytes[8];
-   firstframe=false;
-   STOP();
-   delay();
-   for(int i=0; i<9; i++)
-   {
-      bytes[0]=(0x20+i);
-      bytes[1]=0x42;
-      bytes[2]=0x00;
-      bytes[3]=0x64;
-      bytes[4]=0x00;
-      bytes[5]=0x00;
-      bytes[6]=0x00;
-      bytes[7]=0x00;
-
-      can->Send(0x411, bytes, 8);
-      delay();
-      sendSTORE();
-      delay();
-   }
-   
-   START();
-   delay();
-}
-
-void STOP()
-{
-   uint8_t bytes[8];
-
-   bytes[0]=0x34;
-   bytes[1]=0x00;
-   bytes[2]=0x01;
-   bytes[3]=0x00;
-   bytes[4]=0x00;
-   bytes[5]=0x00;
-   bytes[6]=0x00;
-   bytes[7]=0x00;
-
-   can->Send(0x411, bytes, 8);
-}
-
-void sendSTORE()
-{
-   uint8_t bytes[8];
-
-   bytes[0]=0x32;
-   bytes[1]=0x00;
-   bytes[2]=0x00;
-   bytes[3]=0x00;
-   bytes[4]=0x00;
-   bytes[5]=0x00;
-   bytes[6]=0x00;
-   bytes[7]=0x00;
-
-   can->Send(0x411, bytes, 8);
-}
-
-void START()
-{
-   uint8_t bytes[8];
-
-   bytes[0]=0x34;
-   bytes[1]=0x01;
-   bytes[2]=0x01;
-   bytes[3]=0x00;
-   bytes[4]=0x00;
-   bytes[5]=0x00;
-   bytes[6]=0x00;
-   bytes[7]=0x00;
-
-   can->Send(0x411, bytes, 8);
-}
-
-void handle521(uint32_t data[2])  //Amperes
-
-{
-   uint8_t* bytes = (uint8_t*)data;// arrgghhh this converts the two 32bit array into bytes. See comments are useful:)
-   Amperes = ((bytes[5] << 24) | (bytes[4] << 16) | (bytes[3] << 8) | (bytes[2]));
-}
-
-void handle522(uint32_t data[2])  //Voltage
-
-{
-   uint8_t* bytes = (uint8_t*)data;// arrgghhh this converts the two 32bit array into bytes. See comments are useful:)
-   Voltage1=((bytes[5] << 24) | (bytes[4] << 16) | (bytes[3] << 8) | (bytes[2]));
-}
-
-void handle523(uint32_t data[2]) //Voltage2
-
-{
-   uint8_t* bytes = (uint8_t*)data;// arrgghhh this converts the two 32bit array into bytes. See comments are useful:)
-   Voltage2 = (uint32_t)((bytes[5] << 24) | (bytes[4] << 16) | (bytes[3] << 8) | (bytes[2]));
-
-
-}
-
-void handle524(uint32_t data[2])  //Voltage3
-
-{
-   uint8_t* bytes = (uint8_t*)data;// arrgghhh this converts the two 32bit array into bytes. See comments are useful:)
-   Voltage3 = (uint32_t)((bytes[5] << 24) | (bytes[4] << 16) | (bytes[3] << 8) | (bytes[2]));
-
-}
-
-void handle525(uint32_t data[2])  //Temperature
-{
-   uint8_t* bytes = (uint8_t*)data;// arrgghhh this converts the two 32bit array into bytes. See comments are useful:)
-   uint32_t temp=0;
-   temp = (uint32_t)((bytes[5] << 24) | (bytes[4] << 16) | (bytes[3] << 8) | (bytes[2]));
-
-   Temperature=temp/10;
-
-}
-
-void handle526(uint32_t data[2]) //Kilowatts
-{
-   uint8_t* bytes = (uint8_t*)data;// arrgghhh this converts the two 32bit array into bytes. See comments are useful:)
-   KW = (int32_t)((bytes[5] << 24) | (bytes[4] << 16) | (bytes[3] << 8) | (bytes[2]));
-}
-
-
-void handle527(uint32_t data[2]) //Ampere-Hours
-
-{
-   uint8_t* bytes = (uint8_t*)data;// arrgghhh this converts the two 32bit array into bytes. See comments are useful:)
-   Ah = (bytes[5] << 24) | (bytes[4] << 16) | (bytes[3] << 8) | (bytes[2]);
-}
-
-void handle528(uint32_t data[2])  //kiloWatt-hours
-
-{
-   uint8_t* bytes = (uint8_t*)data;// arrgghhh this converts the two 32bit array into bytes. See comments are useful:)
-   KWh=((bytes[5] << 24) | (bytes[4] << 16) | (bytes[3] << 8) | (bytes[2]));
-
 }
 
 void Can_Tasks()
@@ -343,30 +161,6 @@ void DecodeCAN(int id, uint32_t* data)
 		case 0x1AE:
 			Param::SetInt(Param::opmode, bytes[0]);
 			break;
-		case 0x521:
-		  handle521(data);//ISA CAN MESSAGE
-		  break;
-	   case 0x522:
-		  handle522(data);//ISA CAN MESSAGE
-		  break;
-	   case 0x523:
-		  handle523(data);//ISA CAN MESSAGE
-		  break;
-	   case 0x524:
-		  handle524(data);//ISA CAN MESSAGE
-		  break;
-	   case 0x525:
-		  handle525(data);//ISA CAN MESSAGE
-		  break;
-	   case 0x526:
-		  handle526(data);//ISA CAN MESSAGE
-		  break;
-	   case 0x527:
-		  handle527(data);//ISA CAN MESSAGE
-		  break;
-	   case 0x528:
-		  handle528(data);//ISA CAN MESSAGE
-		  break;
 	   default:
 			break;
 	}
@@ -374,19 +168,10 @@ void DecodeCAN(int id, uint32_t* data)
 }
 static void SetCanFilters()
 {
+	if (Param::GetInt(Param::ShuntType) == 1)  ISA::RegisterCanMessages(can);//select isa shunt
+	if (Param::GetInt(Param::ShuntType) == 2)  SBOX::RegisterCanMessages(can);//select bmw sbox
 	can->RegisterUserMessage(0x605); //Can SDO
 	can->RegisterUserMessage(0x1AE); //OI Control Message
-	if (Param::GetInt(Param::ShuntType) == 1)
-	{
-	   can->RegisterUserMessage(0x521);//ISA MSG
-	   can->RegisterUserMessage(0x522);//ISA MSG
-	   can->RegisterUserMessage(0x523);//ISA MSG
-	   can->RegisterUserMessage(0x524);//ISA MSG
-	   can->RegisterUserMessage(0x525);//ISA MSG
-	   can->RegisterUserMessage(0x526);//ISA MSG
-	   can->RegisterUserMessage(0x527);//ISA MSG
-	   can->RegisterUserMessage(0x528);//ISA MSG
-	}
 }
 	
 static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc) //This is where we go when a defined CAN message is received.
@@ -394,6 +179,7 @@ static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc) //This is wh
     dlc = dlc;
 	if (Param::GetInt(Param::CanCtrl)) DecodeCAN(id,data);
 	if (Param::GetInt(Param::ShuntType) == 1) DecodeCAN(id, data);	
+	if (Param::GetInt(Param::ShuntType) == 2)  SBOX::DecodeCAN(id, data);
 	return false;
 }
 
@@ -467,7 +253,7 @@ extern "C" int main(void)
     s.AddTask(Ms100Task, 100);
 	s.AddTask(Ms200Task, 200);
 	
-	if(Param::GetInt(Param::IsaInit)==1) initialize();//only call this once if a new sensor is fitted.
+	if(Param::GetInt(Param::IsaInit)==1) ISA::initialize(can);//only call this once if a new sensor is fitted.
 	Param::SetInt(Param::opmode, 0);//always off at startup
 
 

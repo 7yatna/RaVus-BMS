@@ -58,7 +58,7 @@
     PARAM_ENTRY(CAT_BMS,    CellVmin,     "mV",      2800, 3500,   3200,      6   ) \
 	PARAM_ENTRY(CAT_COMM,     CanCtrl,      OFFON,     0,      1,      0,   	  7) \
 	PARAM_ENTRY(CAT_COMM,     NodeId,    	  "",     	 1,      63,     5,       8) \
-	PARAM_ENTRY(CAT_SENS,    ShuntType,   SHNTYPE,   0,      1,      0,      9 ) \
+	PARAM_ENTRY(CAT_SENS,    ShuntType,   SHNTYPE,   0,      2,      0,      9 ) \
     PARAM_ENTRY(CAT_SENS,    IsaInit,     OFFON,     0,      1,      0,      10 ) \
 	PARAM_ENTRY(CAT_PWM,       Tim_Presc,  "",        1,      72000,  32,    11 ) \
     PARAM_ENTRY(CAT_PWM,       Tim_Period, "",        1,      100000, 2180,   12 ) \
@@ -245,7 +245,7 @@
 
 /***** Enum String definitions *****/
 #define OPMODES      "0=Off, 1=Run, 2=RunBalance, 3=Charge, 4=ChargeBalance"
-#define SHNTYPE      "0=None, 1=ISA"
+#define SHNTYPE      "0=None, 1=ISA, 2=SBOX"
 #define OFFON        "0=Off, 1=On"
 #define BAL          "0=None, 1=Discharge"
 #define TYPES        "0=Model_3, 1=Model_S, 2=MAX"

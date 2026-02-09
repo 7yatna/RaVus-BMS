@@ -37,7 +37,7 @@ CPPFLAGS    = -Og -g3 -Wall -Wextra -Iinclude/ -Ilibopeninv/include -Ilibopencm3
 LDSCRIPT	  = linker.ld
 LDFLAGS    = -Llibopencm3/lib -T$(LDSCRIPT) -march=armv7 -nostartfiles -Wl,--gc-sections,-Map,linker.map
 OBJSL		  = main.o hwinit.o stm32scheduler.o params.o terminal.o terminal_prj.o \
-             my_string.o digio.o sine_core.o my_fp.o printf.o anain.o \
+             my_string.o digio.o sine_core.o my_fp.o printf.o anain.o bmw_sbox.o isa_shunt.o \
              param_save.o errormessage.o stm32_can.o canhardware.o canmap.o \
              picontroller.o terminalcommands.o BatMan.o ModelS.o cansdo.o BMSUtil.o
 

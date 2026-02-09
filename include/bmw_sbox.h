@@ -19,42 +19,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SimpleISA_h
-#define SimpleISA_h
+#ifndef bmw_sbox_h
+#define bmw_sbox_h
 
-/* This library supports the ISA Scale IVT Modular current/voltage sensor
- * device. These devices measure current, up to three voltages, and provide
- * temperature compensation. This library was written by Jack Rickard of EVtv -
- * http://www.evtv.me copyright 2016. You are licensed to use this library for
- * any purpose, commercial or private, without restriction.
- */
+/*  BMW PHEV Battery "SBOX" control routines.
+    See : https://github.com/damienmaguire/BMW_SBox
+*/
 
 #include <stdint.h>
 #include "my_fp.h"
 #include "canhardware.h"
+#include "my_math.h"
+#include "stm32_can.h"
+#include "params.h"
 
-class ISA
+class SBOX
 {
 
-    ISA();
-    ~ISA();
+    SBOX();
+    ~SBOX();
 
 
 
 public:
     static void RegisterCanMessages(CanHardware* can);
-    static void initialize(CanHardware* can);
-    static void initCurrent(CanHardware* can);
-    static void sendSTORE(CanHardware* can);
-    static void STOP(CanHardware* can);
-    static void START(CanHardware* can);
-    static void RESTART(CanHardware* can);
-    static void deFAULT(CanHardware* can);
     static void DecodeCAN(int id, uint32_t data[2]);
+    static void ControlContactors(int opmode, CanHardware* can);
 
     static int32_t Voltage;
     static int32_t Voltage2;
-    static int32_t Voltage3;
     static int32_t Temperature;
     static int32_t Amperes;   // Floating point with current in Amperes
     static int32_t KW;
@@ -63,14 +56,14 @@ public:
 
 
 private:
-    static void handle521(uint32_t data[2]);
-    static void handle522(uint32_t data[2]);
-    static void handle523(uint32_t data[2]);
-    static void handle524(uint32_t data[2]);
-    static void handle525(uint32_t data[2]);
-    static void handle526(uint32_t data[2]);
-    static void handle527(uint32_t data[2]);
-    static void handle528(uint32_t data[2]);
+
+
+    static void handle200(uint32_t data[2]);
+    static void handle210(uint32_t data[2]);
+    static void handle220(uint32_t data[2]);
+
 };
 
-#endif /* SimpleISA_h */
+#endif /* bmw_sbox_h */
+
+

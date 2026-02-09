@@ -14,8 +14,8 @@
 
 //Here you specify a list of analog inputs, see main.cpp on how to use them
 #define ANA_IN_LIST \
-   ANA_IN_ENTRY(lvmon, GPIOA, 0) \
-   ANA_IN_ENTRY(A1in, GPIOA, 1) \
+   ANA_IN_ENTRY(Vsense, GPIOA, 0) \
+   ANA_IN_ENTRY(Ain, 	GPIOA, 1) \
 
 
 #endif // ANAIN_PRJ_H_INCLUDED

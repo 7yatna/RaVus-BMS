@@ -355,7 +355,7 @@ void BATMan::GetData(uint8_t ReqID)
 
 
 
-    DigIo::BatCS.Clear();
+    DigIo::BMAN_CS.Clear();
 
     receive1 = spi_xfer(SPI1, ReqData[0]);  // do a transfer
     receive2 = spi_xfer(SPI1, ReqData[1]);  // do a transfer
@@ -369,7 +369,7 @@ void BATMan::GetData(uint8_t ReqID)
         Fluffer[count2] = receive1 >> 8;
         Fluffer[count2 + 1] = receive1 & 0xFF;
     }
-    DigIo::BatCS.Set();
+    DigIo::BMAN_CS.Set();
 
     uint16_t tempvol = 0;
 
@@ -569,20 +569,20 @@ void BATMan::WriteCfg()
         BalEven = false;
     }
 
-    DigIo::BatCS.Clear();
+    DigIo::BMAN_CS.Clear();
 
     for (int cnt = 0; cnt < 25; cnt++)
     {
         receive1 = spi_xfer(SPI1, cfgwrt[cnt]);  // do a transfer
     }
-    DigIo::BatCS.Set();
+    DigIo::BMAN_CS.Set();
 }
 
 
 void BATMan::GetTempData ()  //request
 {
     padding=0x0000;
-    DigIo::BatCS.Clear();
+    DigIo::BMAN_CS.Clear();
     receive1 = spi_xfer(SPI1, reqTemp);  // do a transfer
     for (count3 = 0; count3 < 32; count3 ++)
     {
@@ -599,7 +599,7 @@ void BATMan::GetTempData ()  //request
             if(count3==29) Temps[7]=receive1;//temperature 8
         }
     }
-    DigIo::BatCS.Set();
+    DigIo::BMAN_CS.Set();
 
     //Param::SetFloat(Param::temp,69);
 
@@ -610,20 +610,20 @@ void BATMan::WakeUP()
 {
     for (count1 = 0; count1 <= 4; count1++)
     {
-        DigIo::BatCS.Clear();
+        DigIo::BMAN_CS.Clear();
         receive1 = spi_xfer(SPI1, WakeUp[0]);  // do a transfer
-        DigIo::BatCS.Set();
+        DigIo::BMAN_CS.Set();
     }
 }
 
 void BATMan::Generic_Send_Once(uint16_t Command[], uint8_t len)
 {
-    DigIo::BatCS.Clear();
+    DigIo::BMAN_CS.Clear();
     for (int h = 0; h < len; h++)
     {
         receive1 = spi_xfer(SPI1, Command[h]);  // do a transfer
     }
-    DigIo::BatCS.Set();
+    DigIo::BMAN_CS.Set();
 
 }
 
