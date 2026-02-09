@@ -2,3 +2,6 @@
 /obj
 *.o
 /obj
+RaVus-BMS
+*.bin
+*.hex
