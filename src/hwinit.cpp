@@ -40,6 +40,59 @@
 /**
 * Start clocks of all needed peripherals
 */
+uint16_t Tim3_Presc;
+uint16_t Tim3_Period;
+uint32_t Tim3_3_OC;
+uint32_t Tim3_4_OC;
+static int counter1 = 0;
+static int counter2 = 0;
+
+void LoadValues()
+{
+	switch (Param::GetInt(Param::Tim3_Frequency))
+	{
+		case 3:
+			Tim3_Presc = 71;
+			Tim3_Period = 10000;
+			break;
+		case 4:
+			Tim3_Presc = 63;
+			Tim3_Period = 2250;
+			break;
+		case 5:
+			Tim3_Presc = 31;
+			Tim3_Period = 2250;
+			break;
+		case 6:
+			Tim3_Presc = 9;
+			Tim3_Period = 720;
+			break;
+		case 7:
+			Tim3_Presc = 0;
+			Tim3_Period = 720;
+			break;
+		default:
+			Tim3_Presc = 63;
+			Tim3_Period = 2250;
+		break;
+	}
+	
+	Param::SetInt(Param::PWM3CH3_DC, 0);
+	if (Param::GetInt(Param::PWM3_CH3)) 
+	   {
+			Tim3_3_OC = Param::GetInt(Param::Tim3_3_DC)*Tim3_Period;
+			Tim3_3_OC = Tim3_3_OC/100;
+			Param::SetInt(Param::PWM3CH3_DC, Tim3_3_OC);
+	   }
+	Param::SetInt(Param::PWM3CH4_DC, 0);
+	if (Param::GetInt(Param::PWM3_CH4)) 
+	   {
+			Tim3_4_OC = Param::GetInt(Param::Tim3_4_DC)*Tim3_Period;
+			Tim3_4_OC = Tim3_4_OC/100;
+			Param::SetInt(Param::PWM3CH4_DC, Tim3_4_OC);
+	   }
+}
+
 void clock_setup(void)
 {
    RCC_CLOCK_SETUP();
@@ -139,11 +192,7 @@ void spi1_setup()   //spi 1 used for BATMAN!
 	   spi_init_master(SPI1, SPI_CR1_BAUDRATE_FPCLK_DIV_64, SPI_CR1_CPOL_CLK_TO_1_WHEN_IDLE, SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_16BIT, SPI_CR1_MSBFIRST);																				
 	   spi_set_standard_mode(SPI1,3);//set mode 3
 	}
-   else if(BMStype == BMS_MAX)
-    {
-		spi_init_master(SPI1, SPI_CR1_BAUDRATE_FPCLK_DIV_32, SPI_CR1_CPOL_CLK_TO_1_WHEN_IDLE, SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_16BIT, SPI_CR1_MSBFIRST);																				
-	    spi_set_standard_mode(SPI1,0);//set mode 0
-	}
+	
    spi_enable_software_slave_management(SPI1);
    spi_set_nss_high(SPI1);
    spi_enable(SPI1);
@@ -161,18 +210,13 @@ void usart1_setup(void)
 	usart_enable(USART1);
 }
 
-void tim_setup()
-{
 
-}
 void tim3_setup()
 {
-	  gpio_set_mode(GPIOB,GPIO_MODE_OUTPUT_2_MHZ,GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO1);
-	  gpio_set_mode(GPIOB,GPIO_MODE_OUTPUT_2_MHZ,GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO0);
-
+   gpio_set_mode(GPIOB,GPIO_MODE_OUTPUT_2_MHZ,GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO1);
+   gpio_set_mode(GPIOB,GPIO_MODE_OUTPUT_2_MHZ,GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO0);
    timer_disable_counter(TIM3);
    //edge aligned PWM
-   
    timer_set_alignment(TIM3, TIM_CR1_CMS_EDGE);
    timer_enable_preload(TIM3);
    /* PWM mode 1 and preload enable */
@@ -184,10 +228,154 @@ void tim3_setup()
    timer_set_oc_polarity_high(TIM3, TIM_OC4);
    timer_enable_oc_output(TIM3, TIM_OC3);
    timer_enable_oc_output(TIM3, TIM_OC4);
-   timer_set_period(TIM3, Param::GetInt(Param::Tim_Period));
-   timer_set_oc_value(TIM3, TIM_OC3, Param::GetInt(Param::Tim_1_OC));
-   timer_set_oc_value(TIM3, TIM_OC4, Param::GetInt(Param::Tim_2_OC));
+   timer_set_period(TIM3, Tim3_Period);
+   timer_set_oc_value(TIM3, TIM_OC3, 0);
+   Param::SetInt(Param::PWM3CH3, 0);
+   if (Param::GetInt(Param::PWM3_CH3))
+   {
+	   timer_set_oc_value(TIM3, TIM_OC3, Tim3_3_OC);
+	   Param::SetInt(Param::PWM3CH3, 1);
+   }
+   timer_set_oc_value(TIM3, TIM_OC4, 0);
+   Param::SetInt(Param::PWM3CH4, 0);
+   if (Param::GetInt(Param::PWM3_CH4)) 
+   {
+	   timer_set_oc_value(TIM3, TIM_OC4, Tim3_4_OC);
+	   Param::SetInt(Param::PWM3CH4, 1);
+   }									 
    timer_generate_event(TIM3, TIM_EGR_UG);
-   timer_set_prescaler(TIM3,Param::GetInt(Param::Tim_Presc));
+   timer_set_prescaler(TIM3, Tim3_Presc);
    timer_enable_counter(TIM3);
+}
+
+void CH1Low1Hz()
+{
+int DC = Param::GetInt(Param::LOW_1_DC);
+float onSteps = (DC * 100) / 100;
+
+  if (counter1 < onSteps) 
+	  {
+		DigIo::LOW1.Set();
+	  } 
+	  else 
+	  {
+		DigIo::LOW1.Clear();
+	  }
+	
+	counter1++;
+  
+  if (counter1 >= 100) 
+	  {
+		counter1 = 0; // Restart PWM cycle every 500 ms
+	  }
+}
+
+void CH1Low2Hz()
+{
+int DC = Param::GetInt(Param::LOW_1_DC);
+float onSteps = (DC * 50) / 100;
+
+  if (counter1 < onSteps) 
+	  {
+		DigIo::LOW1.Set();
+	  } 
+	  else 
+	  {
+		DigIo::LOW1.Clear();
+	  }
+	
+	counter1++;
+  
+  if (counter1 >= 50) 
+	  {
+		counter1 = 0; // Restart PWM cycle every 500 ms
+	  }
+}
+
+void CH1Low10Hz()
+{
+int DC = Param::GetInt(Param::LOW_1_DC);
+float onSteps = (DC * 10) / 100;
+
+  if (counter1 < onSteps) 
+	  {
+		DigIo::LOW1.Set();
+	  } 
+	  else 
+	  {
+		DigIo::LOW1.Clear();
+	  }
+	
+	counter1++;
+  
+  if (counter1 >= 10) 
+	  {
+		counter1 = 0; // Restart PWM cycle every 500 ms
+	  }
+}
+
+void CH2Low1Hz()
+{
+int DC = Param::GetInt(Param::LOW_2_DC);
+float onSteps = (DC * 100) / 100;
+
+  if (counter2 < onSteps) 
+	  {
+		DigIo::LOW2.Set();
+	  } 
+	  else 
+	  {
+		DigIo::LOW2.Clear();
+	  }
+	
+	counter2++;
+  
+  if (counter2 >= 100) 
+	  {
+		counter2 = 0; // Restart PWM cycle every 500 ms
+	  }
+}
+
+void CH2Low2Hz()
+{
+int DC = Param::GetInt(Param::LOW_2_DC);
+float onSteps = (DC * 50) / 100;
+
+  if (counter2 < onSteps) 
+	  {
+		DigIo::LOW2.Set();
+	  } 
+	  else 
+	  {
+		DigIo::LOW2.Clear();
+	  }
+	
+	counter2++;
+  
+  if (counter2 >= 50) 
+	  {
+		counter2 = 0; // Restart PWM cycle every 500 ms
+	  }
+}
+
+void CH2Low10Hz()
+{
+int DC = Param::GetInt(Param::LOW_2_DC);
+float onSteps = (DC * 10) / 100;
+
+  if (counter2 < onSteps) 
+	  {
+		DigIo::LOW2.Set();
+	  } 
+	  else 
+	  {
+		DigIo::LOW2.Clear();
+	  }
+	
+	counter2++;
+  
+  if (counter2 >= 10) 
+	  {
+		counter2 = 0; // Restart PWM cycle every 500 ms
+	  }
 }

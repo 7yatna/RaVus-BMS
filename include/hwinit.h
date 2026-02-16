@@ -29,7 +29,6 @@ extern "C"
 void clock_setup(void);
 void nvic_setup(void);
 void rtc_setup(void);
-void tim_setup(void);
 void tim3_setup(void);
 void spi1_setup(void);
 void usart1_setup(void);
@@ -37,6 +36,13 @@ void write_bootloader_pininit();
 void DecodeCAN();
 void Can_Tasks();
 void ProcessUdc();
+void LoadValues();
+void CH1Low1Hz();
+void CH1Low2Hz();
+void CH1Low10Hz();
+void CH2Low1Hz();
+void CH2Low2Hz();
+void CH2Low10Hz();
 
 #ifdef __cplusplus
 }

@@ -5,3 +5,4 @@
 RaVus-BMS
 *.bin
 *.hex
+linker.map

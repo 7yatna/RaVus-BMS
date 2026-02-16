@@ -653,12 +653,12 @@ void BATMan::upDateCellVolts(void)
                 if (CellVMax< Voltage[Xr][Yc])
                 {
                     CellVMax =  Voltage[Xr][Yc];
-                    Param::SetInt(Param::CellMax, h+1);
+                    Param::SetInt(Param::umax, h+1);
                 }
                 if (CellVMin > Voltage[Xr][Yc])
                 {
                     CellVMin =  Voltage[Xr][Yc];
-                    Param::SetInt(Param::CellMin, h+1);
+                    Param::SetInt(Param::umin, h+1);
                 }
                 Param::SetFloat((Param::PARAM_NUM)(Param::u1 + h), (Voltage[Xr][Yc]));
                 //section to do balancing setup
@@ -712,8 +712,8 @@ void BATMan::upDateCellVolts(void)
 
 void BATMan::upDateAuxVolts(void)
 {
-    Param::SetInt(Param::Chip1_5V,(rev16(Volts5v[0]))/12.5);
-    Param::SetInt(Param::Chip2_5V,((Volts5v[1]))/12.5);
+    //Param::SetInt(Param::Chip1_5V,(rev16(Volts5v[0]))/12.5);
+    //Param::SetInt(Param::Chip2_5V,((Volts5v[1]))/12.5);
     //Param::SetInt(Param::soc,((Volts5v[2])));
 
     Param::SetFloat(Param::udc,0);
@@ -774,7 +774,7 @@ void BATMan::upDateTemps(void)
             tempval1 = 1131-tempval1;
             tempval2 = tempval1/10;
         }
-        Param::SetFloat((Param::PARAM_NUM)(Param::Chipt0 + g), tempval2);
+        Param::SetFloat((Param::PARAM_NUM)(Param::Chipt1 + g), tempval2);
 
         Temp1[g] = ((Temp1[g])*0.01)-40;
         Temp2[g] = ((Temp2[g])*0.01)-40;
@@ -798,8 +798,8 @@ void BATMan::upDateTemps(void)
             TempMin = Temp2[g];
         }
 
-        Param::SetFloat((Param::PARAM_NUM)(Param::Cellt0_0 + g*2),Temp1[g]);
-        Param::SetFloat((Param::PARAM_NUM)(Param::Cellt0_1 + g*2),Temp2[g]);
+        Param::SetFloat((Param::PARAM_NUM)(Param::Cellt1_0 + g*2),Temp1[g]);
+        Param::SetFloat((Param::PARAM_NUM)(Param::Cellt1_1 + g*2),Temp2[g]);
     }
     Param::SetFloat(Param::TempMax,TempMax);
     Param::SetFloat(Param::TempMin,TempMin);

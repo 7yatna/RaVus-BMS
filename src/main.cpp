@@ -68,6 +68,64 @@ static void Ms10Task(void)
 {
     //Set timestamp of error message
     ErrorMessage::SetTime(rtc_get_counter_val());
+	switch (Param::GetInt(Param::LOW_CH1))
+	{
+		case 1:
+			{
+				Param::SetInt(Param::LOWCH1, 1);
+				Param::SetInt(Param::LOWCH1_DC, Param::GetInt(Param::LOW_1_DC));
+				switch (Param::GetInt(Param::CH1_Frequency))
+					{
+						case 0:
+							CH1Low1Hz();
+							break;
+						case 1:
+							CH1Low2Hz();
+							break;
+						case 2:
+							CH1Low10Hz();
+							break;
+					default:
+						
+					break;
+					}
+			}
+			break;
+		default:
+			Param::SetInt(Param::LOWCH1, 0);
+			Param::SetInt(Param::LOWCH1_DC, 0);
+			DigIo::LOW1.Clear();
+		break;
+	}
+	switch (Param::GetInt(Param::LOW_CH2))
+	{
+		case 1:
+			{
+				Param::SetInt(Param::LOWCH2, 1);
+				Param::SetInt(Param::LOWCH2_DC, Param::GetInt(Param::LOW_2_DC));
+				switch (Param::GetInt(Param::CH2_Frequency))
+					{
+						case 0:
+							CH2Low1Hz();
+							break;
+						case 1:
+							CH2Low2Hz();
+							break;
+						case 2:
+							CH2Low10Hz();
+							break;
+					default:
+						//Handle general parameter changes here. Add paramNum labels for handling specific parameters
+					break;
+					}
+			}
+			break;
+		default:
+			Param::SetInt(Param::LOWCH2, 0);
+			Param::SetInt(Param::LOWCH2_DC, 0);
+			DigIo::LOW2.Clear();
+		break;
+	}
 	//ProcessUdc();
 }
 
@@ -77,8 +135,8 @@ static void Ms100Task(void)
 {
     DigIo::LED_ACT.Toggle();
     iwdg_reset();
-	Param::SetInt(Param::IN1, DigIo::DIN1.Get());
-	Param::SetInt(Param::IN2, DigIo::DIN2.Get());
+	Param::SetInt(Param::GP1_din, DigIo::DIN1.Get());
+	Param::SetInt(Param::GP2_din, DigIo::DIN2.Get());
 	if(DigIo::DIN1.Get() || (Param::GetInt(Param::opmode) == 1)) 
 	{
 		DigIo::PUMP.Set(); 
@@ -122,16 +180,14 @@ static void Ms100Task(void)
     BMSUtil::UpdateSOC();
     canMap->SendAll();
 	Can_Tasks();
-	timer_set_period(TIM3, Param::GetInt(Param::Tim_Period));
-	timer_set_prescaler(TIM3,Param::GetInt(Param::Tim_Presc));
-    timer_set_oc_value(TIM3, TIM_OC3, Param::GetInt(Param::Tim_1_OC));
-    timer_set_oc_value(TIM3, TIM_OC4, Param::GetInt(Param::Tim_2_OC));
 	int32_t IsaTemp=ISA::Temperature;
     Param::SetInt(Param::tmpaux,IsaTemp);
 }
 
 static void Ms200Task(void)
 {
+	LoadValues();
+	tim3_setup();
 }
 
 void Can_Tasks()
@@ -193,10 +249,11 @@ void Param::Change(Param::PARAM_NUM paramNum)
 		case Param::NodeId:
 			canSdo->SetNodeId(Param::GetInt(Param::NodeId));
 			break; 
-		case Param::Tim_Presc:
-		case Param::Tim_Period:
-		case Param::Tim_1_OC:
-		case Param::Tim_2_OC:
+		case Param::Tim3_Frequency:
+		case PWM3_CH3:
+		case Param::Tim3_3_DC:
+		case PWM3_CH4:
+		case Param::Tim3_4_DC:
 			tim3_setup();
 			break;
 		case Param::CanCtrl:
