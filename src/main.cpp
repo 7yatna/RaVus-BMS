@@ -41,6 +41,7 @@
 #include "my_string.h"
 #include "BatMan.h"
 #include "ModelS.h"
+#include "leafbms.h"
 #include "BMSUtil.h"
 #include "MAXbms.h"
 #include "isa_shunt.h"
@@ -126,7 +127,7 @@ static void Ms10Task(void)
 			DigIo::LOW2.Clear();
 		break;
 	}
-	//ProcessUdc();
+	ProcessUdc();
 }
 
 	
@@ -135,6 +136,9 @@ static void Ms100Task(void)
 {
     DigIo::LED_ACT.Toggle();
     iwdg_reset();
+	Param::SetInt(Param::IGN, DigIo::IGN.Get());
+	Param::SetInt(Param::CHG, DigIo::CHG.Get());
+	Param::SetFloat(Param::GP1_ain, (float)AnaIn::Ain.Get());
 	Param::SetInt(Param::GP1_din, DigIo::DIN1.Get());
 	Param::SetInt(Param::GP2_din, DigIo::DIN2.Get());
 	if(DigIo::DIN1.Get() || (Param::GetInt(Param::opmode) == 1)) 
@@ -157,7 +161,6 @@ static void Ms100Task(void)
 		DigIo::FAN.Clear();
 		Param::SetInt(Param::CoolantFAN, 0);
 	}
-	Param::SetFloat(Param::uaux, ((float)AnaIn::Vsense.Get()) / uauxGain);
     float cpuLoad = scheduler->GetCpuLoad();
     Param::SetFloat(Param::cpuload, cpuLoad / 10);
 	/*
@@ -190,6 +193,42 @@ static void Ms200Task(void)
 	tim3_setup();
 }
 
+void ProcessUdc()
+{
+  
+    if (Param::GetInt(Param::ShuntType) == 1)//ISA shunt
+    {
+        float udc1 = ((float)ISA::Voltage)/1000;//get voltage from isa sensor and post to parameter database
+        Param::SetFloat(Param::udc1, udc1);
+        float udc2 = ((float)ISA::Voltage2)/1000;//get voltage from isa sensor and post to parameter database
+        Param::SetFloat(Param::udc2, udc2);
+        float udc3 = ((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
+        Param::SetFloat(Param::udc3, udc3);
+        float idc = ((float)ISA::Amperes)/1000;//get current from isa sensor and post to parameter database
+        Param::SetFloat(Param::idc, idc);
+        float kw = ((float)ISA::KW)/1000;//get power from isa sensor and post to parameter database
+        Param::SetFloat(Param::power, kw);
+        float kwh = ((float)ISA::KWh)/1000;//get kwh from isa sensor and post to parameter database
+        Param::SetFloat(Param::KWh, kwh);
+        float Amph = ((float)ISA::Ah)/3600;//get Ah from isa sensor and post to parameter database
+        Param::SetFloat(Param::AMPh, Amph);
+    }
+    else if (Param::GetInt(Param::ShuntType) == 2)//BMW Sbox
+    {
+        float udc = ((float)SBOX::Voltage2)/1000;//get output voltage from sbox sensor and post to parameter database
+        Param::SetFloat(Param::udc1, udc);
+        float udc2 = ((float)SBOX::Voltage)/1000;//get battery voltage from sbox sensor and post to parameter database
+        Param::SetFloat(Param::udc2, udc2);
+        float udc3 = 0;//((float)ISA::Voltage3)/1000;//get voltage from isa sensor and post to parameter database
+        Param::SetFloat(Param::udc3, udc3);
+        float idc = ((float)SBOX::Amperes)/1000;//get current from sbox sensor and post to parameter database
+        Param::SetFloat(Param::idc, idc);
+        float kw = (udc*idc)/1000;//get power from isa sensor and post to parameter database
+        Param::SetFloat(Param::power, kw);
+    }
+
+    Param::SetFloat(Param::uaux, ((float)AnaIn::Vsense.Get()) / uauxGain);
+}
 void Can_Tasks()
 {
 	
@@ -226,6 +265,7 @@ static void SetCanFilters()
 {
 	if (Param::GetInt(Param::ShuntType) == 1)  ISA::RegisterCanMessages(can);//select isa shunt
 	if (Param::GetInt(Param::ShuntType) == 2)  SBOX::RegisterCanMessages(can);//select bmw sbox
+	if (Param::GetInt(Param::bmstype) == 3)  LeafBMS::RegisterCanMessages(can);//select bmw sbox
 	can->RegisterUserMessage(0x605); //Can SDO
 	can->RegisterUserMessage(0x1AE); //OI Control Message
 }
@@ -234,8 +274,9 @@ static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc) //This is wh
 {
     dlc = dlc;
 	if (Param::GetInt(Param::CanCtrl)) DecodeCAN(id,data);
-	if (Param::GetInt(Param::ShuntType) == 1) DecodeCAN(id, data);	
+	if (Param::GetInt(Param::ShuntType) == 1) ISA::DecodeCAN(id, data);	
 	if (Param::GetInt(Param::ShuntType) == 2)  SBOX::DecodeCAN(id, data);
+	if (Param::GetInt(Param::bmstype) == 3)  LeafBMS::DecodeCAN(id, data);
 	return false;
 }
 
@@ -256,8 +297,9 @@ void Param::Change(Param::PARAM_NUM paramNum)
 		case Param::Tim3_4_DC:
 			tim3_setup();
 			break;
-		case Param::CanCtrl:
+		case Param::bmstype:
 		case Param::ShuntType:
+		case Param::CanCtrl:
 			SetCanFilters();
 			break;
     default:

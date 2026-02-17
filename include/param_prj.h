@@ -85,6 +85,7 @@
     VALUE_ENTRY(CHG,   		 	OFFON,  	2003 ) \
 	VALUE_ENTRY(GP1_din,   	 	OFFON,  	2004 ) \
     VALUE_ENTRY(GP2_din,     	OFFON,  	2005 ) \
+	VALUE_ENTRY(GP1_ain,     	"Count",  	2051 ) \
 	VALUE_ENTRY(uaux,        	"V",    	2006 ) \
 	VALUE_ENTRY(CoolantPUMP, 	OFFON,  	2007 ) \
 	VALUE_ENTRY(CoolantFAN,  	OFFON,  	2008 ) \
@@ -314,7 +315,7 @@
 #define SHNTYPE      "0=None, 1=ISA, 2=SBOX"
 #define OFFON        "0=Off, 1=On"
 #define BAL          "0=None, 1=Discharge"
-#define TYPES        "0=Model_3, 1=Model_S, 2=BMW_PHEV"
+#define TYPES        "0=Model_3, 1=Model_S, 2=BMW_PHEV, 3=Nissan_Leaf"
 #define CAT_BMS      "Battery Management Settings"
 #define CAT_ALRM     "Warning & Alarm Settings"
 #define CAT_SENS     "Current Sensor setup"
