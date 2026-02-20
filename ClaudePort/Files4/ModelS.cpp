@@ -136,12 +136,14 @@ bool TeslaBMSModule::readModuleValues()
             
             // Temperatures (Steinhart-Hart)
             float tempTemp = (1.78f / ((buff[17] * 256 + buff[18] + 2) / 33046.0f) - 3.57f) * 1000.0f;
-            //float tempCalc = 1.0f / (0.0007610373573f + (0.0002728524832f * logf(tempTemp)) + (powf(logf(tempTemp), 3) * 0.0000001022822735f));
-            //temperatures[0] = tempCalc - 273.15f;
+            float tempCalc = 1.0f / (0.0007610373573f + (0.0002728524832f * logf(tempTemp)) +
+                                     (powf(logf(tempTemp), 3) * 0.0000001022822735f));
+            temperatures[0] = tempCalc - 273.15f;
             
             tempTemp = (1.78f / ((buff[19] * 256 + buff[20] + 9) / 33068.0f) - 3.57f) * 1000.0f;
-            //tempCalc = 1.0f / (0.0007610373573f + (0.0002728524832f * logf(tempTemp)) + (powf(logf(tempTemp), 3) * 0.0000001022822735f));
-            //temperatures[1] = tempCalc - 273.15f;
+            tempCalc = 1.0f / (0.0007610373573f + (0.0002728524832f * logf(tempTemp)) +
+                              (powf(logf(tempTemp), 3) * 0.0000001022822735f));
+            temperatures[1] = tempCalc - 273.15f;
             
             if (getLowTemp()  < lowestTemperature)  lowestTemperature  = getLowTemp();
             if (getHighTemp() > highestTemperature) highestTemperature = getHighTemp();
@@ -364,7 +366,7 @@ void TeslaBMSManager::GetAllVoltTemp()
     for (int x = 1; x <= MAX_MODULES; x++)
         if (modules[x].isExisting()) modules[x].stopBalance();
     
-    //osDelay(numFoundModules < 8 ? 200 : 50);
+    osDelay(numFoundModules < 8 ? 200 : 50);
     
     totalCells = 0;
     for (int x = 1; x <= MAX_MODULES; x++) {

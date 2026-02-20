@@ -40,10 +40,9 @@
 #include "terminalcommands.h"
 #include "my_string.h"
 #include "BatMan.h"
-#include "ModelS.h"
 #include "leafbms.h"
+#include "ModelS.h"
 #include "BMSUtil.h"
-#include "MAXbms.h"
 #include "isa_shunt.h"
 #include "bmw_sbox.h"
 #define PRINT_JSON 0
@@ -175,10 +174,24 @@ static void Ms100Task(void)
     {
         BATMan::loop();
     }
-    else if(BMStype == BMS_MAX)
+	/*
+	else if(BMStype == BMS_TESLAS)
     {
-        MAXbms::Task100Ms();
+        BATMan::loop();
     }
+	
+	else if(BMStype == BMS_BMW)
+    {
+        //BATMan::loop();
+    }
+	
+	else if(BMStype == BMS_LEAF)
+    {
+        //BATMan::loop();
+    }
+    
+	*/
+    
 ///////////////
     BMSUtil::UpdateSOC();
     canMap->SendAll();
@@ -275,7 +288,7 @@ static bool CanCallback(uint32_t id, uint32_t data[2], uint8_t dlc) //This is wh
     dlc = dlc;
 	if (Param::GetInt(Param::CanCtrl)) DecodeCAN(id,data);
 	if (Param::GetInt(Param::ShuntType) == 1) ISA::DecodeCAN(id, data);	
-	if (Param::GetInt(Param::ShuntType) == 2)  SBOX::DecodeCAN(id, data);
+	if (Param::GetInt(Param::ShuntType) == 2) SBOX::DecodeCAN(id, data);
 	if (Param::GetInt(Param::bmstype) == 3)  LeafBMS::DecodeCAN(id, data);
 	return false;
 }
@@ -360,11 +373,23 @@ extern "C" int main(void)
     {
         BATMan::BatStart();
     }
-    else if(BMStype == BMS_MAX)
+	/*
+	else if(BMStype == BMS_TESLAS)
     {
-        MAXbms::MaxStart();
-    } 
-
+        //BATMan::BatStart();
+		usart_send_blocking(USART1, 'S');
+    }
+	
+	else if(BMStype == BMS_BMW)
+    {
+       //BATMan::BatStart();
+    }
+	
+	else if(BMStype == BMS_LEAF)
+    {
+        //BATMan::BatStart();
+    }
+    */
     Param::SetInt(Param::version, 4);
     Param::Change(Param::PARAM_LAST); //Call callback one for general parameter propagation
 	SetCanFilters();

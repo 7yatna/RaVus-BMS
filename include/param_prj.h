@@ -346,7 +346,8 @@ enum _types
 {
     BMS_M3 = 0,
     BMS_TESLAS = 1,
-    BMS_MAX = 2
+    BMS_BMW = 2,
+	BMS_LEAF = 3
 };
 
 //Generated enum-string for possible errors

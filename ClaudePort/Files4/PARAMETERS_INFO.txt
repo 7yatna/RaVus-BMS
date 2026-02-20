@@ -1,0 +1,41 @@
+/*
+ * PARAMETER ADDITIONS FOR param_prj.h
+ * 
+ * Add these parameters to /home/claude/RaVus-BMS-main/include/param_prj.h
+ * 
+ * The Tesla Model S BMS type is already defined as BMS_TESLAS = 1
+ * So no changes needed to the enum at the bottom.
+ * 
+ * Just verify that line 318 has Model_S in the TYPES string:
+ * #define TYPES        "0=Model_3, 1=Model_S, 2=BMW_PHEV, 3=Nissan_Leaf"
+ * 
+ * All other parameters already exist in the standard param_prj.h:
+ * - Param::umin, umax, deltaV (cell voltage min/max/delta in mV)
+ * - Param::TempMin, TempMax, Tempavg (temperatures in °C)
+ * - Param::udc (pack voltage in V)
+ * - Param::CellsPresent (total cell count)
+ * - Param::u1 through Param::u20 (individual cell voltages in mV)
+ * - Param::balance (enable/disable balancing)
+ * - Param::Vbalance (balance voltage threshold in mV)
+ * 
+ * NO CHANGES NEEDED TO param_prj.h!
+ * 
+ * The existing RaVus BMS parameters are perfectly suited for Tesla Model S slaves.
+ */
+
+/* ========================================================================
+ * HOW TO USE:
+ * ========================================================================
+ * 
+ * 1. Set bmstype parameter to 1 (Model_S) via terminal or CAN
+ * 2. Set numbmbs to your actual module count (e.g., 4 modules = 24 cells)
+ * 3. Set balance to 1 to enable cell balancing
+ * 4. Set Vbalance to desired threshold (e.g., 3900 mV)
+ * 5. The system will automatically:
+ *    - Enumerate modules on startup
+ *    - Read all voltages/temps every 100ms
+ *    - Publish to Param::umin, umax, deltaV, TempMin, TempMax, etc.
+ *    - Balance cells above Vbalance threshold
+ * 
+ * ========================================================================
+ */

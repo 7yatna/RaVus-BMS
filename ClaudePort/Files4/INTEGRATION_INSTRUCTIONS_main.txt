@@ -1,0 +1,56 @@
+/*
+ * INTEGRATION INSTRUCTIONS FOR main.cpp
+ * 
+ * Add these changes to /home/claude/RaVus-BMS-main/src/main.cpp
+ */
+
+// ========================================================================
+// STEP 1: Add include at top (around line 43)
+// ========================================================================
+#include "ModelS.h"    // <-- ADD THIS LINE after #include "leafbms.h"
+
+
+// ========================================================================
+// STEP 2: Add to Ms100Task() function (around line 173-183)
+// ========================================================================
+// Replace the existing Model S section with this:
+
+    if(BMStype == BMS_M3)
+    {
+        BATMan::loop();
+    }
+    else if(BMStype == BMS_MAX)
+    {
+        MAXbms::Task100Ms();
+    }
+    else if(BMStype == BMS_TESLAS)  // <-- ADD THIS BLOCK (BMS_TESLAS = 1)
+    {
+        TeslaBMSManager::Task100Ms();
+    }
+
+
+// ========================================================================
+// STEP 3: Add initialization in main() function (around line 359-366)
+// ========================================================================
+// Replace the existing initialization section with this:
+
+    if(BMStype == BMS_M3)
+    {
+        BATMan::BatStart();
+    }
+    else if(BMStype == BMS_MAX)
+    {
+        MAXbms::MaxStart();
+    }
+    else if(BMStype == BMS_TESLAS)  // <-- ADD THIS BLOCK (BMS_TESLAS = 1)
+    {
+        TeslaBMSManager::Init();
+        TeslaBMSManager::RenumberModules();
+        TeslaBMSManager::FindModules();
+        TeslaBMSManager::ClearFaults();
+    }
+
+// ========================================================================
+// COMPLETE! The Tesla BMS will now run on the 100ms scheduler task.
+// Set Param::bmstype to 1 to activate Tesla Model S slaves.
+// ========================================================================

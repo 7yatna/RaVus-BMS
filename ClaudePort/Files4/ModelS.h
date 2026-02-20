@@ -14,7 +14,7 @@
 #include <stdbool.h>
 #include "params.h"
 
-#define MAX_MODULES 20  // Maximum Tesla BMS modules supported
+#define MAX_MODULES 16  // Maximum Tesla BMS modules supported
 
 class TeslaBMSModule
 {
